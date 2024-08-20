@@ -18,7 +18,7 @@ picam.configure(config)
 
 picam.start()
 
-model = YOLO("last.pt")
+model = YOLO("best.pt")
 
 
 import os #saving video
@@ -32,7 +32,7 @@ while True:
     
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     
-    results = model(img, show=False, conf=0.5)  #yolov8
+    results = model(img, show=False, conf=0.4)  #yolov8q
     fire_detected = False
 
     
@@ -54,13 +54,17 @@ while True:
             distance_x = (cx - center_x) // 1 
             distance_y = (center_y - cy) // 1 
                 
-            current_time = time.time() #serial communication
-            if current_time - last_send_time >= 1: 
-                print(f"Fire is on: {distance_x},{distance_y}")
-                ser.write(str(distance_x).encode() + b',' + str(distance_y).encode())
-                last_send_time = current_time    
-                
-                
+    current_time = time.time() #serial communication
+    if current_time - last_send_time >= 1: 
+        if fire_detected:
+            print(f"Fire is on: {distance_x},{distance_y}")
+            ser.write(str(distance_x).encode() + b',' + str(distance_y).encode())
+        else:
+            print(f"No Fire")
+            ser.write(b'0')
+        last_send_time = current_time    
+            
+              
     center_x, center_y = img.shape[1] // 2, img.shape[0] // 2 # drawing cross
     cross_length = 50
     line_color = (0, 255, 255) if fire_detected else (255, 0, 0) 
