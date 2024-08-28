@@ -18,7 +18,7 @@ picam.configure(config)
 
 picam.start()
 
-model = YOLO("best.pt")
+model = YOLO("god.pt")
 
 
 import os #saving video
@@ -32,10 +32,10 @@ while True:
     
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     
-    results = model(img, show=False, conf=0.4)  #yolov8q
+    results = model(img, show=False, conf=0.6) #yolov8q
     fire_detected = False
 
-    
+    center_x, center_y = img.shape[1] // 2, img.shape[0] // 2 # drawing cross
     for result in results:
         boxes = result.boxes
         for box in boxes: #box boundary
@@ -45,7 +45,6 @@ while True:
             
             cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2) 
             cv2.putText(img, f'Fire Detected [{conf:.2f}]', (int(x1), int(y1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-            
             if cls == 0:
                 fire_detected = True #center of fire
                 cx = (x1 + x2) // 2 
@@ -53,19 +52,23 @@ while True:
             
             distance_x = (cx - center_x) // 1 
             distance_y = (center_y - cy) // 1 
+            
                 
     current_time = time.time() #serial communication
-    if current_time - last_send_time >= 1: 
+    if current_time - last_send_time >= 2: 
         if fire_detected:
             print(f"Fire is on: {distance_x},{distance_y}")
-            ser.write(str(distance_x).encode() + b',' + str(distance_y).encode())
+            #ser.write(b"0")
+            ser.write(f'{distance_x},{distance_y}\n'.encode())
+            #ser.write(str(distance_x).encode() + b',' + str(distance_y).encode())
         else:
             print(f"No Fire")
-            ser.write(b'0')
+            ser.write(b"0\n")
+            #ser.write(str(fire_detected).encode())
         last_send_time = current_time    
             
               
-    center_x, center_y = img.shape[1] // 2, img.shape[0] // 2 # drawing cross
+    #center_x, center_y = img.shape[1] // 2, img.shape[0] // 2 # drawing cross
     cross_length = 50
     line_color = (0, 255, 255) if fire_detected else (255, 0, 0) 
     cv2.line(img, (center_x - cross_length, center_y), (center_x + cross_length, center_y), line_color, 2)
